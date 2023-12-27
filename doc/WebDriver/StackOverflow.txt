@@ -1,0 +1,59 @@
+First, start Firefox in remote controllable state:
+
+ 1. Close all instances of Firefox
+ 2. Start Firefox with the poorly documented --marionette command line switch:
+
+    "c:\Program Files\Mozilla Firefox\firefox.exe" --marionette
+
+Firefox will start, and apart from the little robot icon, and the quite annoying pink/gray stripes over the address bar, it will operate normally.
+
+Then [download the latest version of GeckoDriver from here][1]. Copy it into the same directory where you have firefox.exe, (c:\Program Files\Mozilla Firefox\ on Windows). After all, it is part of Firefox, and should have been distributed with Firefox.
+
+Then, in Selenium Java, open FirefoxDriver like this:
+
+    import java.io.IOException;
+    import java.time.Duration;
+    import java.util.ArrayList;
+    import java.util.HashMap;
+    import java.util.List;
+
+    import org.openqa.selenium.WebDriver;
+    import org.openqa.selenium.firefox.FirefoxDriver;
+    import org.openqa.selenium.firefox.GeckoDriverService;
+
+    public final class Browser {
+	    private Browser() {
+	    }
+
+		private static WebDriver driver = null;
+
+		public static WebDriver open() throws IOException {
+			if (driver == null) {
+				List<String> args = new ArrayList<>();
+				args.add("--port=43068");
+				args.add("--allow-origins");
+				args.add("http://127.0.0.1:45015");
+				args.add("http://localhost:45015");
+				args.add("http://[::1]:45015");
+				args.add("--marionette-port=2828");
+				args.add("--connect-existing");
+				var env = new HashMap<String, String>();
+				var service = new GeckoDriverService(
+					new File("c:\\Program Files\\Mozilla Firefox\\geckodriver.exe"),
+					43068,
+					Duration.ofSeconds(20),
+					args,
+					env
+				);
+				driver = new FirefoxDriver(service);
+			}
+			return driver;
+		}
+        ...
+
+Unfortunately you cannot use GeckoDriverService.Builder, because createArgs() is hard-coded there, and it is unable to insert the most important "--connect-existing" argument into the argument list.
+
+I am sorry for the hard-coded magic port numbers in the example. Later I will override GeckoDriverService.Builder, and make a proper solution.
+
+  [1]: https://github.com/mozilla/geckodriver/releases
+
